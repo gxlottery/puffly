@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arixo Messenger Pro | Masterpiece Edition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* ปรับโทนสีตามธีมใหม่ที่คุณต้องการ */
+            --bg: #e0f7f1; 
+            --bg-gradient: radial-gradient(circle at center, #f0fffb, #b2f2e3);
+            --card: #ffffff; 
+            --primary: #18e0c4; 
+            --primary-grad: linear-gradient(135deg, #18e0c4, #0d9488);
+            --text: #1c1e21; 
+            --muted: #65676b; 
+            --bubble-me: #18e0c4;
+            --bubble-you: #e6ffad; /* สีเลม่อนสว่างที่คุณวงไว้ */
+            --accent: #ff4757;
+        }
+        body.dark-mode {
+            --bg: #0b1220; --card: #0f1c26; --text: #ffffff; --muted: #94a3b8; --bubble-you: #1e2b36;
+            --bg-gradient: none;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-gradient); background-color: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; }
+
+        /* --- Header --- */
+        .header { padding: 12px 16px; background: var(--card); backdrop-filter: blur(10px); display: flex; align-items: center; border-bottom: 1px solid rgba(24, 224, 196, 0.2); z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .arixo-logo { font-size: 20px; font-weight: 800; background: var(--primary-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-right: 15px; }
+        .user-info { flex: 1; display: flex; align-items: center; gap: 10px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 12px; background: var(--primary-grad); display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid rgba(0,0,0,0.1); }
+        .status-dot { width: 10px; height: 10px; background: #2ecc71; border: 2px solid var(--card); border-radius: 50%; position: absolute; bottom: -2px; right: -2px; }
+        .call-btns { display: flex; gap: 18px; color: var(--primary); cursor: pointer; }
+
+        /* --- Chat Body --- */
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 85%; position: relative; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-wrapper.me { align-self: flex-end; align-items: flex-end; }
+        .msg-wrapper.you { align-self: flex-start; align-items: flex-start; }
+
+        .msg { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; cursor: pointer; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .msg.me { background: var(--primary-grad); color: #0b1220; font-weight: 500; border-bottom-right-radius: 4px; }
+        .msg.you { background: var(--bubble-you); color: var(--text); border-bottom-left-radius: 4px; border: 1px solid #d4fc79; }
+        .msg img { max-width: 100%; border-radius: 10px; }
+
+        /* Reply, Reaction, Skeleton */
+        .reply-tag { font-size: 11px; background: rgba(212, 252, 121, 0.4); padding: 5px 8px; border-radius: 8px; border-left: 3px solid var(--primary); margin-bottom: 4px; color: var(--text); }
+        .react-badge { position: absolute; bottom: -10px; right: 10px; background: var(--card); border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 2px 6px; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .skeleton { height: 40px; width: 60%; background: linear-gradient(90deg, #f0f2f5 25%, #e0f7f1 50%, #f0f2f5 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 15px; margin-bottom: 10px; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* --- Dashboard Emoji --- */
+        #emojiDashboard { display: none; position: absolute; bottom: 0; left: 0; right: 0; background: var(--card); z-index: 2000; border-top: 1px solid rgba(24, 224, 196, 0.2); animation: slideUp 0.3s ease; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .emoji-nav-top { display: flex; align-items: center; padding: 10px 15px; gap: 20px; border-bottom: 1px solid rgba(0,0,0,0.05); overflow-x: auto; scrollbar-width: none; }
+        .nav-item { color: var(--muted); font-size: 18px; cursor: pointer; padding: 5px; transition: 0.2s; }
+        .nav-item.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+        .emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; padding: 15px; max-height: 250px; overflow-y: auto; }
+        .emoji-char { font-size: 26px; cursor: pointer; text-align: center; }
+        .emoji-nav-bottom { display: flex; justify-content: space-around; padding: 12px; border-top: 1px solid rgba(0,0,0,0.05); color: var(--muted); }
+
+        /* --- Input Area --- */
+        .input-wrapper { background: var(--card); padding: 10px 15px 35px; border-top: 1px solid rgba(24, 224, 196, 0.1); }
+        .toolbar { display: flex; gap: 20px; margin-bottom: 12px; color: var(--primary); font-size: 20px; align-items: center; }
+        .lang-btn { font-size: 11px; font-weight: bold; border: 1px solid var(--primary); padding: 2px 6px; border-radius: 6px; cursor: pointer; }
+        .input-row { display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.03); border-radius: 25px; padding: 5px 15px; border: 1px solid rgba(24, 224, 196, 0.2); }
+        .input-box { flex: 1; background: transparent; border: none; padding: 10px 0; color: var(--text); outline: none; font-size: 15px; }
+
+        /* Overlays */
+        .call-overlay { display: none; position: fixed; inset: 0; background: radial-gradient(circle, #f0fffb, #b2f2e3); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
+        .rec-active { color: var(--accent) !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .context-menu { display:none; position:fixed; background:var(--card); border:1px solid rgba(0,0,0,0.1); border-radius:12px; padding:8px; z-index:3000; box-shadow:0 10px 30px rgba(0,0,0,0.1); min-width:140px; }
+        .menu-item { padding: 10px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-radius: 8px; color: var(--text); }
+    </style>
+</head>
+<body onclick="hideEmojiDashboard()">
+
+    <div class="header">
+        <div class="arixo-logo">Arixo</div>
+        <div class="user-info">
+            <div class="user-avatar"><i class="fa-solid fa-robot" style="color:#0b1220"></i><div class="status-dot"></div></div>
+            <div><b>Support Team</b><p id="onlineStatus" style="font-size: 10px; color: var(--primary);">Online</p></div>
+        </div>
+        <div class="call-btns">
+            <i class="fa-solid fa-phone" onclick="openCall('Voice Call')"></i>
+            <i class="fa-solid fa-video" onclick="openCall('Video Call')"></i>
+            <i class="fa-solid fa-circle-half-stroke" onclick="document.body.classList.toggle('dark-mode')"></i>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatBox">
+        <div id="skeletonContainer">
+            <div class="skeleton"></div>
+            <div class="skeleton" style="width: 40%; align-self: flex-end;"></div>
+        </div>
+    </div>
+
+    <div id="emojiDashboard" onclick="event.stopPropagation()">
+        <div class="emoji-nav-top">
+            <i class="fa-solid fa-keyboard nav-item" onclick="hideEmojiDashboard()"></i>
+            <i class="fa-solid fa-face-smile nav-item active" onclick="switchEmojiTab('smile')"></i>
+            <i class="fa-solid fa-gift nav-item" onclick="switchEmojiTab('gif')"></i>
+            <i class="fa-solid fa-icons nav-item" onclick="switchEmojiTab('stickers')"></i>
+            <i class="fa-solid fa-plus nav-item" style="margin-left:auto"></i>
+        </div>
+        <div class="emoji-grid" id="emojiContent"></div>
+        <div class="emoji-nav-bottom">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <i class="fa-regular fa-clock"></i>
+            <i class="fa-solid fa-face-smile"></i>
+            <i class="fa-solid fa-dog"></i>
+            <i class="fa-solid fa-utensils"></i>
+            <i class="fa-solid fa-house"></i>
+            <i class="fa-solid fa-basketball"></i>
+            <i class="fa-solid fa-book"></i>
+        </div>
+    </div>
+
+    <div class="input-wrapper">
+        <div id="replyBar" class="reply-tag" style="display:none; position:relative; background:#d4fc79;">
+            <span id="replyText">...</span>
+            <i class="fa-solid fa-xmark" style="position:absolute; right:10px; top:5px; cursor:pointer;" onclick="cancelReply()"></i>
+        </div>
+        <div class="toolbar">
+            <div class="lang-btn" onclick="toggleLang()" id="langBtn">TH</div>
+            <i class="fa-solid fa-face-smile" onclick="toggleEmojiDashboard(event)"></i>
+            <i class="fa-solid fa-camera" id="camBtn" onclick="takeVideo()"></i>
+            <i class="fa-solid fa-microphone" id="micBtn" onclick="toggleVoice()"></i>
+            <i class="fa-solid fa-image" onclick="document.getElementById('fileInput').click()"></i>
+            <i class="fa-solid fa-file-export" onclick="exportData()"></i>
+        </div>
+        <form class="input-row" onsubmit="event.preventDefault(); sendMsg();">
+            <input type="text" id="mainInput" class="input-box" placeholder="เขียนข้อความ...">
+            <button type="submit" style="background:none; border:none; color:var(--primary); font-size:20px;"><i class="fa-solid fa-paper-plane"></i></button>
+        </form>
+        <input type="file" id="fileInput" hidden onchange="handleFile(this)">
+    </div>
+
+    <div id="contextMenu" class="context-menu">
+        <div class="menu-item" onclick="setupReply()"><i class="fa-solid fa-reply"></i> ตอบกลับ</div>
+        <div class="menu-item" onclick="reactMsg('❤️')"><i class="fa-solid fa-heart"></i> ถูกใจ</div>
+        <div class="menu-item" style="color:var(--accent)" onclick="deleteMsg()"><i class="fa-solid fa-trash"></i> ลบข้อความ</div>
+    </div>
+
+    <div id="callOverlay" class="call-overlay">
+        <div style="width:120px; height:120px; border-radius:30px; background:var(--primary-grad); margin-bottom:20px;"></div>
+        <h2 id="callType">Calling...</h2>
+        <button onclick="closeCall()" style="margin-top:50px; background:var(--accent); border:none; width:65px; height:65px; border-radius:50%; color:white;"><i class="fa-solid fa-phone-slash"></i></button>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const mainInput = document.getElementById('mainInput');
+        const contextMenu = document.getElementById('contextMenu');
+        let selectedId = null, replyId = null, currentLang = 'TH';
+        let mediaRec, audioChunks = [], isRecording = false;
+
+        const emojis = ['😊','😂','😍','👍','🔥','❤️','😮','😢','🙏','✨','😎','🥳','🤔','🙌','💡','🎮','🚀','🌈','🎉','🍎'];
+
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('skeletonContainer').style.display = 'none';
+                loadChat();
+            }, 1000);
+        };
+
+        function toggleEmojiDashboard(e) {
+            e.stopPropagation();
+            const dash = document.getElementById('emojiDashboard');
+            dash.style.display = (dash.style.display === 'block') ? 'none' : 'block';
+            if(dash.style.display === 'block') loadEmojiGrid();
+        }
+        function hideEmojiDashboard() { document.getElementById('emojiDashboard').style.display = 'none'; }
+        function loadEmojiGrid() {
+            const grid = document.getElementById('emojiContent');
+            grid.innerHTML = emojis.map(e => `<span class="emoji-char" onclick="addEmoji('${e}')">${e}</span>`).join('');
+        }
+        function addEmoji(e) { mainInput.value += e; }
+        function switchEmojiTab(tab) { if(tab === 'smile') loadEmojiGrid(); }
+
+        function sendMsg() {
+            const val = mainInput.value.trim();
+            if(!val) return;
+            const msg = {
+                id: Date.now(), text: val, side: 'me',
+                time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+                reply: replyId ? document.getElementById('replyText').innerText : null,
+                react: null
+            };
+            renderMsg(msg);
+            saveMsg(msg);
+            
+            // แก้ไข: สั่งปิดแถบตอบกลับทันทีเมื่อส่งสำเร็จ
+            cancelReply(); 
+            
+            mainInput.value = "";
+            setTimeout(() => renderMsg({id:Date.now(), text:"Arixo AI รับข้อมูลแล้วครับ", side:'you', time:'Now'}), 1500);
+        }
+
+        function renderMsg(data) {
+            const wrap = document.createElement('div');
+            wrap.className = `msg-wrapper ${data.side}`;
+            wrap.id = `msg-${data.id}`;
+            wrap.oncontextmenu = (e) => { e.preventDefault(); selectedId = data.id; showMenu(e); };
+            wrap.innerHTML = `
+                ${data.reply ? `<div class="reply-tag">${data.reply}</div>` : ''}
+                <div class="msg ${data.side}">${data.text}</div>
+                ${data.react ? `<div class="react-badge">${data.react}</div>` : ''}
+                <div style="font-size:10px; color:var(--muted); margin-top:5px;">${data.time}</div>
+            `;
+            chatBox.appendChild(wrap);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function toggleVoice() {
+            const btn = document.getElementById('micBtn');
+            if(!isRecording) {
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRec = new MediaRecorder(s);
+                    audioChunks = [];
+                    mediaRec.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRec.onstop = () => {
+                        const url = URL.createObjectURL(new Blob(audioChunks));
+                        renderMsg({id:Date.now(), text:`<audio controls src="${url}"></audio>`, side:'me', time:'Now'});
+                    };
+                    mediaRec.start(); isRecording = true; btn.classList.add('rec-active');
+                } catch(e) { alert("Mic Access Denied"); }
+            } else { mediaRec.stop(); isRecording = false; btn.classList.remove('rec-active'); }
+        }
+
+        async function takeVideo() {
+            const btn = document.getElementById('camBtn');
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const vRec = new MediaRecorder(s);
+                let chunks = [];
+                vRec.ondataavailable = e => chunks.push(e.data);
+                vRec.onstop = () => {
+                    const url = URL.createObjectURL(new Blob(chunks));
+                    renderMsg({id:Date.now(), text:`<video controls src="${url}" style="width:100%"></video>`, side:'me', time:'Now'});
+                    s.getTracks().forEach(t => t.stop());
+                };
+                vRec.start(); btn.classList.add('rec-active');
+                setTimeout(() => { vRec.stop(); btn.classList.remove('rec-active'); }, 3000);
+            } catch(e) { alert("Camera Access Denied"); }
+        }
+
+        function handleFile(input) {
+            if(input.files[0]) {
+                const r = new FileReader();
+                r.onload = e => renderMsg({id:Date.now(), text:`<img src="${e.target.result}">`, side:'me', time:'Now'});
+                r.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'TH' ? 'EN' : 'TH';
+            document.getElementById('langBtn').innerText = currentLang;
+            mainInput.placeholder = currentLang === 'TH' ? "เขียนข้อความ..." : "Type a message...";
+        }
+
+        function showMenu(e) { contextMenu.style.display = 'block'; contextMenu.style.left = e.pageX + 'px'; contextMenu.style.top = e.pageY + 'px'; }
+        function setupReply() {
+            const t = document.querySelector(`#msg-${selectedId} .msg`).innerText;
+            replyId = selectedId;
+            document.getElementById('replyText').innerText = t;
+            document.getElementById('replyBar').style.display = 'block';
+            mainInput.focus();
+        }
+        function cancelReply() { 
+            replyId = null; 
+            document.getElementById('replyBar').style.display = 'none'; 
+        }
+        function reactMsg(emoji) {
+            const m = document.getElementById(`msg-${selectedId}`);
+            if(!m.querySelector('.react-badge')) {
+                const b = document.createElement('div'); b.className = 'react-badge';
+                b.innerText = emoji; m.appendChild(b);
+            }
+        }
+        function deleteMsg() { document.getElementById(`msg-${selectedId}`).remove(); }
+        function openCall(t) { document.getElementById('callType').innerText = t; document.getElementById('callOverlay').style.display = 'flex'; }
+        function closeCall() { document.getElementById('callOverlay').style.display = 'none'; }
+
+        function saveMsg(m) {
+            let h = JSON.parse(localStorage.getItem('arixo_history')) || [];
+            h.push(m); localStorage.setItem('arixo_history', JSON.stringify(h.slice(-50)));
+        }
+        function loadChat() {
+            let h = JSON.parse(localStorage.getItem('arixo_history')) || [];
+            h.forEach(renderMsg);
+        }
+        function exportData() {
+            const data = localStorage.getItem('arixo_history');
+            const blob = new Blob([data], {type: 'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'arixo_chat.json'; a.click();
+        }
+    </script>
+</body>
+</html>
